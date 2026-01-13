@@ -5,20 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QQ Music API</title>
-    <meta name="description" content="QQ Music API - 基于 Cloudflare Pages 的 QQ 音乐 API 服务">
     <style>
-        :root {
-            --primary: #31c27c;
-            --primary-dark: #28a66a;
-            --bg: #0d1117;
-            --bg-secondary: #161b22;
-            --text: #e6edf3;
-            --text-muted: #8b949e;
-            --border: #30363d;
-            --success: #3fb950;
-            --warning: #d29922;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -26,489 +13,105 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .container {
-            max-width: 1000px;
-            margin: 0 auto;
+            max-width: 600px;
             padding: 40px 20px;
-        }
-
-        header {
             text-align: center;
-            margin-bottom: 60px;
         }
 
         h1 {
-            font-size: 3rem;
-            background: linear-gradient(135deg, var(--primary), #4facfe);
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #31c27c, #4facfe);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
 
         .subtitle {
-            color: var(--text-muted);
-            font-size: 1.2rem;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin: 20px 8px 0;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-        }
-
-        .badge.online {
-            border-color: var(--success);
-            color: var(--success);
-        }
-
-        .api-section {
+            color: #888;
             margin-bottom: 40px;
         }
 
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .api-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+        .api-list {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            margin-bottom: 16px;
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
+            padding: 20px;
         }
 
-        .api-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .api-header {
-            padding: 16px 20px;
+        .api-item {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+
+        .api-item:last-child {
+            border: none;
         }
 
         .method {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .method.get {
-            background: rgba(49, 194, 124, 0.2);
-            color: var(--primary);
-        }
-
-        .method.post {
-            background: rgba(210, 153, 34, 0.2);
-            color: var(--warning);
+            color: #31c27c;
+            width: 50px;
         }
 
         .endpoint {
-            font-family: 'Monaco', 'Menlo', monospace;
-            color: var(--text);
+            color: #4facfe;
+            flex: 1;
         }
 
-        .api-content {
-            padding: 0 20px 20px;
-            border-top: 1px solid var(--border);
-            display: none;
-        }
-
-        .api-card.expanded .api-content {
-            display: block;
-        }
-
-        .params-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-        }
-
-        .params-table th,
-        .params-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .params-table th {
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .param-name {
-            font-family: monospace;
-            color: var(--primary);
-        }
-
-        .param-required {
-            color: #f85149;
-            font-size: 0.8rem;
-        }
-
-        code {
-            background: rgba(110, 118, 129, 0.2);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .example {
-            background: #0d1117;
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 16px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
+        .desc {
+            color: #888;
+            font-size: 0.85rem;
         }
 
         footer {
-            text-align: center;
-            margin-top: 60px;
-            padding-top: 40px;
-            border-top: 1px solid var(--border);
-            color: var(--text-muted);
+            margin-top: 40px;
+            color: #555;
+            font-size: 0.85rem;
         }
 
-        footer a {
-            color: var(--primary);
+        a {
+            color: #31c27c;
             text-decoration: none;
-        }
-
-        .icon {
-            font-size: 1.2rem;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <header>
-            <h1>🎵 QQ Music API</h1>
-            <p class="subtitle">基于 Cloudflare Pages 的 QQ 音乐 API 服务</p>
-            <span class="badge online">● 在线</span>
-            <span class="badge">Cloudflare Pages</span>
-            <span class="badge">D1 Database</span>
-        </header>
+        <h1>🎵 QQ Music API</h1>
+        <p class="subtitle">Cloudflare Pages + D1</p>
 
-        <section class="api-section">
-            <h2><span class="icon">🔍</span> 搜索</h2>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/search</span>
-                </div>
-                <div class="api-content">
-                    <p>搜索歌曲、歌手、专辑或歌单</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">keyword</span> <span class="param-required">*</span></td>
-                            <td>string</td>
-                            <td>搜索关键词</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">type</span></td>
-                            <td>string</td>
-                            <td>类型: song, singer, album, playlist (默认 song)</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">num</span></td>
-                            <td>int</td>
-                            <td>返回数量 (默认 10)</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">page</span></td>
-                            <td>int</td>
-                            <td>页码 (默认 1)</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/search?keyword=周杰伦&type=song&num=20</div>
-                </div>
+        <div class="api-list">
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/search?keyword=xxx</span>
             </div>
-        </section>
-
-        <section class="api-section">
-            <h2><span class="icon">🎶</span> 歌曲</h2>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/song/url</span>
-                </div>
-                <div class="api-content">
-                    <p>获取歌曲播放链接</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">mid</span> <span class="param-required">*</span></td>
-                            <td>string</td>
-                            <td>歌曲 MID，支持逗号分隔多个</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">quality</span></td>
-                            <td>string</td>
-                            <td>音质: 128, 320, flac (默认 128)</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/song/url?mid=001234567&quality=320</div>
-                </div>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/song/url?mid=xxx</span>
             </div>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/song/detail</span>
-                </div>
-                <div class="api-content">
-                    <p>获取歌曲详情</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">mid</span></td>
-                            <td>string</td>
-                            <td>歌曲 MID</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">id</span></td>
-                            <td>int</td>
-                            <td>歌曲 ID (mid 或 id 二选一)</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/song/detail?mid=001234567</div>
-                </div>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/song/detail?mid=xxx</span>
             </div>
-        </section>
-
-        <section class="api-section">
-            <h2><span class="icon">📝</span> 歌词</h2>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/lyric</span>
-                </div>
-                <div class="api-content">
-                    <p>获取歌词 (支持 LRC/QRC 格式)</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">mid</span></td>
-                            <td>string</td>
-                            <td>歌曲 MID</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">id</span></td>
-                            <td>int</td>
-                            <td>歌曲 ID (mid 或 id 二选一)</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/lyric?mid=001234567</div>
-                </div>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/lyric?mid=xxx</span></div>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/album?mid=xxx</span></div>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/playlist?id=xxx</span>
             </div>
-        </section>
-
-        <section class="api-section">
-            <h2><span class="icon">💿</span> 专辑 / 歌单 / 歌手</h2>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/album</span>
-                </div>
-                <div class="api-content">
-                    <p>获取专辑详情</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">mid</span></td>
-                            <td>string</td>
-                            <td>专辑 MID</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/album?mid=001234567</div>
-                </div>
-            </div>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/playlist</span>
-                </div>
-                <div class="api-content">
-                    <p>获取歌单详情</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">id</span> <span class="param-required">*</span></td>
-                            <td>int</td>
-                            <td>歌单 ID</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">num</span></td>
-                            <td>int</td>
-                            <td>歌曲数量 (默认 100)</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/playlist?id=123456789</div>
-                </div>
-            </div>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/singer</span>
-                </div>
-                <div class="api-content">
-                    <p>获取歌手信息</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">mid</span></td>
-                            <td>string</td>
-                            <td>歌手 MID</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/singer?mid=0025NhlN2yWrP4</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="api-section">
-            <h2><span class="icon">📊</span> 排行榜</h2>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/top</span>
-                </div>
-                <div class="api-content">
-                    <p>获取排行榜列表或详情</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">id</span></td>
-                            <td>int</td>
-                            <td>排行榜 ID (不传则返回列表)</td>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">num</span></td>
-                            <td>int</td>
-                            <td>歌曲数量 (默认 100)</td>
-                        </tr>
-                    </table>
-                    <div class="example">GET /api/top?id=4</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="api-section">
-            <h2><span class="icon">🔑</span> 凭证</h2>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method get">GET</span>
-                    <span class="endpoint">/api/credential</span>
-                </div>
-                <div class="api-content">
-                    <p>获取当前凭证信息</p>
-                    <div class="example">GET /api/credential</div>
-                </div>
-            </div>
-
-            <div class="api-card">
-                <div class="api-header" onclick="toggleCard(this)">
-                    <span class="method post">POST</span>
-                    <span class="endpoint">/api/refresh</span>
-                </div>
-                <div class="api-content">
-                    <p>手动刷新凭证</p>
-                    <table class="params-table">
-                        <tr>
-                            <th>参数</th>
-                            <th>类型</th>
-                            <th>说明</th>
-                        </tr>
-                        <tr>
-                            <td><span class="param-name">force</span></td>
-                            <td>bool</td>
-                            <td>强制刷新 (默认 false)</td>
-                        </tr>
-                    </table>
-                    <div class="example">POST /api/refresh?force=true</div>
-                </div>
-            </div>
-        </section>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/singer?mid=xxx</span></div>
+            <div class="api-item"><span class="method">GET</span><span class="endpoint">/api/top</span></div>
+        </div>
 
         <footer>
-            <p>Powered by <a href="https://pages.cloudflare.com" target="_blank">Cloudflare Pages</a></p>
-            <p style="margin-top: 8px; font-size: 0.9rem;">参考 <a href="https://github.com/L-1124/QQMusicApi"
-                    target="_blank">L-1124/QQMusicApi</a></p>
+            <a href="https://github.com/tooplick/qq-music-api" target="_blank">GitHub</a>
         </footer>
     </div>
-
-    <script>
-        function toggleCard(header) {
-            header.parentElement.classList.toggle('expanded');
-        }
-    </script>
 </body>
 
 </html>
