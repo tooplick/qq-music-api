@@ -1,0 +1,12 @@
+name = "qq-music-api"
+compatibility_date = "2026-01-14"
+
+# D1 数据库绑定 - 在 Cloudflare Dashboard 创建后填入
+[[d1_databases]]
+binding = "DB"
+database_name = "qq-music-api"
+database_id = "0eb000e7-4400-4d59-b087-96a5d777e92e" # 部署前替换
+
+# 定时刷新凭证 (每小时)
+[triggers]
+crons = ["0 * * * *"]
