@@ -91,12 +91,7 @@ export async function onRequest(context) {
             <p>${initResult}</p>
         </div>
         
-        ${credential ? `
-        <div class="credential">
-            musicid: ${credential.musicid}<br>
-            musickey: ${credential.musickey?.substring(0, 20)}...
-        </div>
-        ` : ''}
+
         
         <p style="margin-top: 20px; text-align: center;">
             <a href="/">← 返回首页</a>
