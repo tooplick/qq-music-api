@@ -51,7 +51,7 @@ Fork 此仓库到你的 GitHub 账户。
 | `/api/song/url?mid=xxx&quality=flac` | 获取歌曲播放链接 (quality: flac/320/128，默认 flac，自动降级) |
 | `/api/song/detail?mid=xxx` | 获取歌曲详情 |
 | `/api/song/cover?mid=xxx` | 获取歌曲封面 |
-| `/api/lyric?mid=xxx` | 获取歌词 |
+| `/api/lyric?mid=xxx&qrc=1&trans=1` | 获取歌词 (支持参数: qrc(逐字), trans(翻译), roma(罗马音)) |
 | `/api/album?mid=xxx` | 获取专辑详情 |
 | `/api/playlist?id=xxx` | 获取歌单详情 |
 | `/api/singer?mid=xxx` | 获取歌手信息 |

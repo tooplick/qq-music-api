@@ -419,62 +419,26 @@ function tripledes_crypt(data, key) {
     return res;
 }
 
-// Zlib implementation for browser/worker environment (pako is too heavy, simple inflate needed)
-// But Cloudflare Workers runtime implies standard web APIs.
-// Use DecompressionStream if available (supported in Workers)
-// Zlib implementation for browser/worker environment
-// DecompressionStream('deflate') typically handles Raw Deflate (RFC 1951).
-// Python's zlib.decompress expects Zlib (RFC 1950), which has a 2-byte header and checksum.
-// We may need to strip the header for DecompressionStream to work.
+// Zlib implementation using pako for better compatibility
+import pako from "pako";
+
 async function decompress(data) {
-    const tryDecompress = async (inputData) => {
-        try {
-            const ds = new DecompressionStream('deflate');
-            const writer = ds.writable.getWriter();
-            writer.write(inputData);
-            writer.close();
-            const output = [];
-            const reader = ds.readable.getReader();
-            let totalSize = 0;
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                output.push(value);
-                totalSize += value.length;
-            }
-            const concatenated = new Uint8Array(totalSize);
-            let offset = 0;
-            for (const array of output) {
-                concatenated.set(array, offset);
-                offset += array.length;
-            }
-            return new TextDecoder().decode(concatenated);
-        } catch (e) {
-            throw e;
-        }
-    };
-
     try {
-        // 1. Try raw (maybe it's raw deflate)
-        return await tryDecompress(data);
-    } catch (e) {
-        // 2. Try stripping zlib header (2 bytes)
-        if (data.length > 2) {
-            try {
-                return await tryDecompress(data.slice(2));
-            } catch (e2) {
-                // 3. Try stripping zlib header (2 bytes) AND checksum (4 bytes)
-                if (data.length > 6) {
-                    try {
-                        return await tryDecompress(data.slice(2, -4));
-                    } catch (e3) {
-                        // console.error('Decompression failed (stripped header+checksum):', e3);
-                    }
-                }
-            }
-        }
+        // pako.inflate handles zlib headers and raw deflate automatically if setup,
+        // but by default inflate() expects zlib header.
+        // If it fails, we can try raw inflate.
 
-        console.error('All decompression attempts failed');
+        // Convert Uint8Array to normal array or keep as is (pako accepts Uint8Array)
+
+        // 1. Try standard inflate (zlib header)
+        try {
+            return pako.inflate(data, { to: 'string' });
+        } catch (e) {
+            // 2. Try raw inflate
+            return pako.inflate(data, { to: 'string', raw: true });
+        }
+    } catch (e) {
+        console.error('Decompression failed:', e);
         return '';
     }
 }
@@ -484,6 +448,7 @@ export async function qrc_decrypt(encrypted_qrc_hex) {
     if (!encrypted_qrc_hex) return "";
 
     try {
+        // Handle hex string to Uint8Array
         const encrypted_qrc = new Uint8Array(encrypted_qrc_hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 
         let data = new Uint8Array(0);
@@ -491,6 +456,7 @@ export async function qrc_decrypt(encrypted_qrc_hex) {
         const schedule = tripledes_key_setup(keyBytes, DECRYPT);
 
         // Pre-calculate full size to avoid repeated allocations
+        // TripleDES block size is 8 bytes
         const decryptedChunks = [];
         let totalLen = 0;
 
@@ -510,6 +476,8 @@ export async function qrc_decrypt(encrypted_qrc_hex) {
         }
 
         // Decompress (zlib)
+        // Note: TripleDES decryption might result in padding bytes at the end (PKCS5/7 or zeros)
+        // Standard zlib usually knows where the stream ends, but pako is robust.
         return await decompress(combined);
 
     } catch (e) {
