@@ -1,6 +1,6 @@
 /**
  * 歌词 API
- * GET /api/lyric?mid=xxx
+ * GET /api/lyric?mid=xxx&qrc=1&trans=1&roma=1
  */
 
 import { apiRequest, jsonResponse, errorResponse, handleOptions } from "../lib/request.js";
@@ -25,23 +25,6 @@ async function getCredential(env) {
     return credential;
 }
 
-/**
- * Base64 解码 (支持 UTF-8 中文)
- */
-function base64Decode(str) {
-    try {
-        // atob 返回的是 Latin-1 字符串，需要转换为 UTF-8
-        const binaryString = atob(str);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return new TextDecoder('utf-8').decode(bytes);
-    } catch {
-        return "";
-    }
-}
-
 export async function onRequest(context) {
     const { request, env } = context;
 
@@ -57,7 +40,9 @@ export async function onRequest(context) {
         const url = new URL(request.url);
         const mid = url.searchParams.get("mid");
         const id = url.searchParams.get("id");
-        const format = url.searchParams.get("format") || "auto"; // auto, lrc, qrc, raw
+        const qrc = url.searchParams.get("qrc") === "1" || url.searchParams.get("qrc") === "true";
+        const trans = url.searchParams.get("trans") === "1" || url.searchParams.get("trans") === "true";
+        const roma = url.searchParams.get("roma") === "1" || url.searchParams.get("roma") === "true";
 
         if (!mid && !id) {
             return errorResponse("Missing required parameter: mid or id", 400);
@@ -65,12 +50,26 @@ export async function onRequest(context) {
 
         const credential = await getCredential(env);
 
-        // 获取歌词
+        // 构造请求参数
         const params = {
-            songmid: mid || "",
-            songid: id ? parseInt(id) : 0,
-            format: "json",
+            crypt: 1,
+            ct: 11,
+            cv: 13020508,
+            lrc_t: 0,
+            qrc: qrc ? 1 : 0,
+            qrc_t: 0,
+            roma: roma ? 1 : 0,
+            roma_t: 0,
+            trans: trans ? 1 : 0,
+            trans_t: 0,
+            type: 1
         };
+
+        if (id) {
+            params.songId = parseInt(id);
+        } else {
+            params.songMid = mid;
+        }
 
         const data = await apiRequest(
             "music.musichallSong.PlayLyricInfo",
@@ -84,62 +83,49 @@ export async function onRequest(context) {
             data: {
                 mid: mid || "",
                 id: id || "",
+                lyric: "",
+                trans: "",
+                roma: "" // 即使没请求也返回空字符串，保持结构一致
             },
         };
 
+        // 解密处理函数
+        async function processLyric(content) {
+            if (!content) return "";
+            // 如果是以 [ 开头，可能是未加密的（虽然 crypt=1 通常都是加密的 hex）
+            if (content.startsWith('[')) return content;
+
+            try {
+                const decrypted = await qrc_decrypt(content);
+                return decrypted || content;
+            } catch (e) {
+                console.warn("歌词解密失败:", e);
+                return "";
+            }
+        }
+
         // 处理普通歌词 (LRC)
         if (data.lyric) {
-            let lyricContent = base64Decode(data.lyric);
-            // 如果不是以 [ 开头，说明是加密的 Hex 格式，需要解密
-            if (lyricContent && !lyricContent.startsWith('[')) {
-                try {
-                    const decrypted = await qrc_decrypt(lyricContent);
-                    if (decrypted) lyricContent = decrypted;
-                } catch (e) {
-                    console.warn("LRC 歌词解密失败:", e);
-                }
-            }
-            result.data.lyric = lyricContent;
+            result.data.lyric = await processLyric(data.lyric);
         }
 
         // 处理翻译歌词
         if (data.trans) {
-            let transContent = base64Decode(data.trans);
-            // 如果不是以 [ 开头，说明是加密的 Hex 格式，需要解密
-            if (transContent && !transContent.startsWith('[')) {
-                try {
-                    const decrypted = await qrc_decrypt(transContent);
-                    if (decrypted) transContent = decrypted;
-                } catch (e) {
-                    console.warn("翻译歌词解密失败:", e);
-                }
-            }
-            result.data.trans = transContent;
+            result.data.trans = await processLyric(data.trans);
         }
 
-        // 处理 QRC 歌词 (需要解密)
-        if (data.qrc && format !== "lrc") {
-            try {
-                const qrcContent = await qrc_decrypt(data.qrc);
-                result.data.qrc = qrcContent;
-            } catch (e) {
-                console.warn("QRC 解密失败:", e);
-            }
+        // 处理 QRC 歌词 (QRC 也是 hex 加密的)
+        if (data.qrc) {
+            // QRC 特殊处理：有些字段返回的是 xml 结构，需要提取 content 属性 (参考 python 版本)
+            // 但 qrc_decrypt 返回的是解密后的文本。
+            // 如果解密后是 XML 格式 <Lyric_1 LyricType="1" LyricContent="..."/>，可能需要正则提取
+            // 这里先直接返回解密结果，让前端处理或根据观察调整
+            result.data.qrc = await processLyric(data.qrc);
         }
 
         // 处理罗马音歌词
         if (data.roma) {
-            let romaContent = base64Decode(data.roma);
-            // 如果不是以 [ 开头，说明是加密的 Hex 格式，需要解密
-            if (romaContent && !romaContent.startsWith('[')) {
-                try {
-                    const decrypted = await qrc_decrypt(romaContent);
-                    if (decrypted) romaContent = decrypted;
-                } catch (e) {
-                    console.warn("罗马音歌词解密失败:", e);
-                }
-            }
-            result.data.roma = romaContent;
+            result.data.roma = await processLyric(data.roma);
         }
 
         return jsonResponse(result);
